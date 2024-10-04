@@ -83,12 +83,18 @@ function Quaternion.new(a, b, c, d)
     return self
 end
 
--- Overloading the addition operator
+function Quaternion:coefficients()
+    return {self.a, self.b, self.c, self.d}
+end
+
+function Quaternion:conjugate()
+    return Quaternion.new(self.a, -self.b, -self.c, -self.d)
+end
+
 function Quaternion.__add(q1, q2)
     return Quaternion.new(q1.a + q2.a, q1.b + q2.b, q1.c + q2.c, q1.d + q2.d)
 end
 
--- Overloading the multiplication operator
 function Quaternion.__mul(q1, q2)
     local a = q1.a * q2.a - q1.b * q2.b - q1.c * q2.c - q1.d * q2.d
     local b = q1.a * q2.b + q1.b * q2.a + q1.c * q2.d - q1.d * q2.c
@@ -100,21 +106,56 @@ end
 function Quaternion.__eq(q1, q2)
     return q1.a == q2.a and q1.b == q2.b and q1.c == q2.c and q1.d == q2.d
 end
-
-function Quaternion:conjugate()
-    return Quaternion.new(self.a, -self.b, -self.c, -self.d)
-end
-
-function Quaternion:coefficients()
-    return self.a, self.b, self.c, self.d
+-- Helper function to round correctly to one decimal place, handling edge cases
+local function round_to_one_decimal(value)
+    -- Add 0.05 for positive values and subtract 0.05 for negative values to adjust rounding correctly
+    if value > 0 then
+        return math.floor(value * 10 + 0.5) / 10
+    else
+        return math.ceil(value * 10 - 0.5) / 10
+    end
 end
 
 function Quaternion:__tostring()
-    local result = tostring(self.a)
-    if self.b ~= 0 then result = result .. (self.b > 0 and "+" or "") .. self.b .. "i" end
-    if self.c ~= 0 then result = result .. (self.c > 0 and "+" or "") .. self.c .. "j" end
-    if self.d ~= 0 then result = result .. (self.d > 0 and "+" or "") .. self.d .. "k" end
-    return result
+    local terms = {}
+
+    if self.a ~= 0 then
+        table.insert(terms, string.format("%.1f", round_to_one_decimal(self.a)))
+    end
+
+    if self.b ~= 0 then
+        if self.b == 1 then
+            table.insert(terms, "i")
+        elseif self.b == -1 then
+            table.insert(terms, "-i")
+        else
+            table.insert(terms, string.format("%+.1fi", round_to_one_decimal(self.b)))
+        end
+    end
+
+    if self.c ~= 0 then
+        if self.c == 1 then
+            table.insert(terms, "j")
+        elseif self.c == -1 then
+            table.insert(terms, "-j")
+        else
+            table.insert(terms, string.format("%+.1fj", round_to_one_decimal(self.c)))
+        end
+    end
+
+    if self.d ~= 0 then
+        if self.d == 1 then
+            table.insert(terms, "k")
+        elseif self.d == -1 then
+            table.insert(terms, "-k")
+        else
+            table.insert(terms, string.format("%+.1fk", round_to_one_decimal(self.d)))
+        end
+    end
+
+    local result = table.concat(terms)
+
+    result = result:gsub("([ijk])([ijk])", "%1+%2")
+
+    return result ~= "" and result or "0"
 end
-
-
